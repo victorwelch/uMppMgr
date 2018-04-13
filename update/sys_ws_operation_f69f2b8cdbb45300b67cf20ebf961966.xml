@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json,application/xml,text/xml</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri/>
+        <enforce_acl/>
+        <http_method>POST</http_method>
+        <name>uLoadCreate</name>
+        <operation_script><![CDATA[function ulChildTasks(argChildTaskList,argSysId)
+{
+	if (argChildTaskList.length<1) return [];
+    var myGr, mySysId, myDtmStart, myDtmEnd, iState, myInfo, isUpdate;
+    var myQuerySysId;
+    var tp;
+    var tp1List = ['taskname',
+				   'taskassignmentgroup',
+				   'taskassignedto',
+				   'taskstate',
+                   'taskpriority',
+                   'taskimpact',
+                   'tasktype',
+                   'taskconstraint',
+                   'taskkeymilestone',
+                   'taskmilestone'];
+    var tp1Len = tp1List.length;
+    var tp2List = ['taskplannedstartdate',
+                   'taskplannedenddate',
+                   'taskactualstartdate',
+                   'taskactualenddate'];
+    var tp2Len = tp2List.length;
+	var fldList = {tasknum:'number',
+				   taskname:'short_description',
+				   taskassignmentgroup:'assignment_group',
+				   taskassignedto:'assigned_to',
+				   taskstate:'state',
+                   taskpriority:'priority',
+                   taskimpact:'impact',
+                   tasktype:'u_task_type',
+                   taskconstraint:'time_constraint',
+                   taskkeymilestone:'key_milestone',
+                   taskmilestone:'milestone',
+                   taskplannedstartdate:'end_date',
+                   taskplannedenddate:'start_date',
+                   taskactualstartdate:'work_start',
+                   taskactualenddate:'work_end'};	    
+	
+	for (var i=0,iLength=argChildTaskList.length;i<iLength;i++)
+	{   
+
+		myGr = new GlideRecord('pm_project_task');
+        myGr.initialize();
+        for (var j=0;j < tp1Len; j++)
+        {   tp = argChildTaskList[i][tp1List[j]];
+            if (tp.datastatus != 'empty')
+            {
+                fld = fldList[tp1List[j]];
+                myGr.setValue(fld,tp.value);
+            }
+        }
+		
+        myGr.calculation_type = 'manual';
+        myGr.parent = argSysId;
+        mySysId = myGr.insert();
+
+        myInfo = {};
+		myInfo.sysId = mySysId;
+		myInfo.number = "";
+        myInfo.name = argChildTaskList[i].taskname.value;
+		myInfo.childlist = [];
+        argChildTaskList[i].info = myInfo;
+        if (argChildTaskList[i].childlist.length > 0) {
+            ulChildTasks(argChildTaskList[i].childlist, mySysId);
+        }
+
+        myGr = new GlideRecord("pm_project_task");
+        myGr.initialize();
+
+        myQuerySysId = 'sys_id=' + argChildTaskList[i].info.sysId;
+        myGr.addEncodedQuery(myQuerySysId);
+        myGr.query();
+        if (myGr.next()) {
+			isUpdate=false;
+            argChildTaskList[i].info.number = myGr.getValue("number");
+            for (var k=0; k < tp2Len; k++) 
+            {
+                tp = argChildTaskList[i][tp2List[k]];
+                if (tp.datastatus != 'empty')                
+                {
+					isUpdate=true;
+                    fld = fldList[tp2List[k]];
+                    myGr.setValue(fld,tp.value);
+                }
+            }
+            if (isUpdate) myGr.update();
+        }        
+		//gs.info('task: manual to auto');
+    }
+}
+function uGatherInfo(argList)
+{
+    if (argList.length < 1) return [];
+    var myInfoList = [];
+    var myInfo;
+	var myQuerySysId,myGr,isUpdate;
+    for (var i = 0, iLength = argList.length;i<iLength;i++)
+    {	
+        myInfo = argList[i].info;
+		if (argList[i].childlist.length>0)
+		{
+			myInfo.childlist = uGatherInfo(argList[i].childlist);			
+		}
+        myInfoList.push(myInfo);
+	}
+    return myInfoList;
+}
+function uReCalcAll(argProjSysId)
+{
+	var myGr = new GlideRecord("pm_project");
+    myGr.initialize();	
+	var myQuerySysId = 'sys_id='+argProjSysId;	
+	myGr.addEncodedQuery(myQuerySysId);  
+	myGr.query();	
+	if(myGr.next()) 
+	{
+		myGr.calculation_type = 'automatic';
+		myGr.update();
+	}	
+	var plannedTaskAPI=new global.SncPlannedTaskAPI();
+	plannedTaskAPI.recalculate(argProjSysId);
+}
+(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+    // implement resource here	
+    var myGr, mySysId, myDtmStart, myDtmEnd, myInfo, myQuerySysId, isUpdate;
+    var myRtnList=[];
+    var pp,fld;
+    var pp1List = ['projectname',
+                   'portfolio',
+                   'program',
+                   'cmdbci',
+                   'projectmgr',
+                   'assignedto',
+                   'phase',
+                   'phasetype',
+                   'schedule',
+                   'state',
+                   'priority',
+                   'risk',
+                   'strategicpriority',
+                   'hotitem',
+                   'needsfollowup'];
+    var pp1Len = pp1List.length;
+    var pp2List = ['plannedstartdate',
+                   'plannedenddate',
+                   'actualstartdate',
+                   'actualenddate'];    
+    var pp2Len = pp2List.length;
+    var fldList = {projectnum:'number',
+                   projectname:'short_description',
+                   portfolio:'primary_portfolio',
+                   program:'primary_program',
+                   cmdbci:'cmdb_ci',
+                   projectmgr:'project_manager',
+                   assignedto:'assigned_to',
+                   phase:'phase',
+                   phasetype:'phase_type',
+                   schedule:'schedule',
+                   state:'state',
+                   priority:'priority',
+                   risk:'risk',
+                   strategicpriority:'u_strategic_priority',
+                   hotitem:'u_hot_item',
+                   needsfollowup:'u_needs_follow_up',
+                   plannedstartdate:'start_date',
+                   plannedenddate:'end_date',
+                   actualstartdate:'work_start',
+                   actualenddate:'work_end'};        
+
+    // *************************************
+    var myMpp = request.body.data;      // *
+    // *************************************
+
+    for (var i = 0, iLength = myMpp.length; i < iLength; i++)
+	{
+		myGr = new GlideRecord('pm_project');
+        myGr.initialize();
+        for (var j=0;j < pp1Len; j++)
+        {   pp = myMpp[i][pp1List[j]];
+            if (pp.datastatus != 'empty')
+            {
+                fld = fldList[pp1List[j]];
+                myGr.setValue(fld,pp.value);
+            }
+        }
+        myGr.calculation_type = 'manual';
+        mySysId = myGr.insert();
+
+		myInfo = {};
+		myInfo.sysId = mySysId;
+		myInfo.number = "";
+        myInfo.name = myMpp[i].projectname.value;
+		myInfo.childlist = [];
+        myMpp[i].info = myInfo;
+
+        ulChildTasks(myMpp[i].childlist, mySysId);
+
+        myGr = new GlideRecord('pm_project');
+        myGr.initialize();
+        myQuerySysId = 'sys_id=' + myMpp[i].info.sysId;
+        myGr.addEncodedQuery(myQuerySysId);
+        myGr.query();
+        if (myGr.next()) {
+			isUpdate = false;
+            myMpp[i].info.number = myGr.getValue("number");
+            for (var k=0; k < pp2Len; k++) 
+            {
+                pp = myMpp[i][pp2List[k]];
+                if (pp.datastatus != 'empty')                
+                {
+					isUpdate = true;
+                    fld = fldList[pp2List[k]];
+                    myGr.setValue(fld,pp.value);
+                }
+            }
+            if (isUpdate) myGr.update();
+        }
+	}
+    myRtnList = uGatherInfo(myMpp);
+	for (var n=0,nLength=myRtnList.length;n<nLength;n++)
+	{
+		uReCalcAll(myRtnList[n].sysId);
+	}
+	var data = {};
+	return myRtnList;
+})(request,response);]]></operation_script>
+        <operation_uri>/api/x_126085_umppmgr/uweb/create</operation_uri>
+        <produces>application/json,application/xml,text/xml</produces>
+        <produces_customized>false</produces_customized>
+        <relative_path>/create</relative_path>
+        <request_example/>
+        <requires_acl_authorization>false</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <short_description>Loads data from user, creating new Project and sub-tasks</short_description>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2018-03-07 22:40:55</sys_created_on>
+        <sys_id>f69f2b8cdbb45300b67cf20ebf961966</sys_id>
+        <sys_mod_count>9</sys_mod_count>
+        <sys_name>uLoadCreate</sys_name>
+        <sys_package display_value="uMppMgr" source="x_126085_umppmgr">d93cab88db745300b67cf20ebf9619d2</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="uMppMgr">d93cab88db745300b67cf20ebf9619d2</sys_scope>
+        <sys_update_name>sys_ws_operation_f69f2b8cdbb45300b67cf20ebf961966</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2018-04-10 21:36:02</sys_updated_on>
+        <web_service_definition display_value="uWeb">a08ca78cdbb45300b67cf20ebf96195c</web_service_definition>
+        <web_service_version/>
+    </sys_ws_operation>
+</record_update>

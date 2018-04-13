@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<record_update table="sys_user_role_contains">
+    <sys_user_role_contains action="INSERT_OR_UPDATE">
+        <contains display_value="x_126085_umppmgr.admin" name="x_126085_umppmgr.admin">94d8a451db491300b67cf20ebf96193a</contains>
+        <role display_value="admin" name="admin">2831a114c611228501d4ea6c309d626d</role>
+        <sys_class_name>sys_user_role_contains</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2018-03-23 16:07:07</sys_created_on>
+        <sys_id>135fec15db491300b67cf20ebf961977</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_126085_umppmgr.admin.admin</sys_name>
+        <sys_package display_value="uMppMgr" source="x_126085_umppmgr">d93cab88db745300b67cf20ebf9619d2</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="uMppMgr">d93cab88db745300b67cf20ebf9619d2</sys_scope>
+        <sys_update_name>sys_user_role_contains_135fec15db491300b67cf20ebf961977</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2018-03-23 16:07:07</sys_updated_on>
+    </sys_user_role_contains>
+</record_update>

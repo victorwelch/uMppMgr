@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json,application/xml,text/xml</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri/>
+        <enforce_acl/>
+        <http_method>GET</http_method>
+        <name>uProjectList</name>
+        <operation_script><![CDATA[(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+	
+	// Project List	
+	myProjectList=[];
+	myGr = new GlideRecord("pm_project");
+	myGr.newRecord();
+	myGr.addEncodedQuery('active=true');
+	myGr.orderByDesc('number');
+	myGr.query();
+	while (myGr.next())
+	{
+		li={};
+		li.label = myGr.getValue('number');
+		li.value = myGr.getValue('sys_id');
+		li.name = myGr.getValue('short_description');
+		li.createdon=myGr.getDisplayValue("sys_created_on");
+		li.createdby=myGr.getDisplayValue("sys_created_by");
+		li.updatedon=myGr.getDisplayValue("sys_updated_on");		
+		li.updatedby=myGr.getDisplayValue("sys_updated_by");		
+		myProjectList.push(li);
+	}	
+
+	//
+	myResult = {};
+	myResult.project=myProjectList;
+	
+	return myResult;	
+	
+})(request, response);]]></operation_script>
+        <operation_uri>/api/x_126085_umppmgr/uweb/projlist/{id}</operation_uri>
+        <produces>application/json,application/xml,text/xml</produces>
+        <produces_customized>false</produces_customized>
+        <relative_path>/projlist/{id}</relative_path>
+        <request_example/>
+        <requires_acl_authorization>false</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <short_description>Get list of projects for look up</short_description>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2018-03-22 19:22:00</sys_created_on>
+        <sys_id>34f15401db011300b67cf20ebf9619f4</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>uProjectList</sys_name>
+        <sys_package display_value="uMppMgr" source="x_126085_umppmgr">d93cab88db745300b67cf20ebf9619d2</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="uMppMgr">d93cab88db745300b67cf20ebf9619d2</sys_scope>
+        <sys_update_name>sys_ws_operation_34f15401db011300b67cf20ebf9619f4</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2018-04-09 20:10:47</sys_updated_on>
+        <web_service_definition display_value="uWeb">a08ca78cdbb45300b67cf20ebf96195c</web_service_definition>
+        <web_service_version/>
+    </sys_ws_operation>
+</record_update>

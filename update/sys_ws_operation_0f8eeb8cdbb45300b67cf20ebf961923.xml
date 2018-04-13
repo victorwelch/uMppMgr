@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json,application/xml,text/xml</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri/>
+        <enforce_acl/>
+        <http_method>GET</http_method>
+        <name>uLuLists</name>
+        <operation_script><![CDATA[(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+
+    var myGr,myResult;
+    var myPortfolioList, myProgramList, myProjectMgrList, myAssignedToList, myPhaseList, myPhaseTypeList;
+    var myScheduleList, myStateList, myPriorityList, myRiskList,myCmdbCiList, myConstraintList;
+    var myPmtImpactList, myPmtTaskTypeList, myPmtAssignmentGroupList, myPmtAssignedToList;
+    var myCalculationTypeList;
+    
+    // Portfolio List
+    myPortfolioList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    myPortfolioList.push(li);
+    myGr = new GlideRecord("pm_portfolio");
+    myPgmGr = 
+    myGr.newRecord();
+    myGr.addEncodedQuery("active=true");  
+    myGr.orderBy("name");
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("name");
+        li.value=myGr.getValue("sys_id");
+        myPortfolioList.push(li);
+    }
+    
+    // Program List
+    myProgramList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    myProgramList.push(li);
+    myGr = new GlideRecord("pm_program");
+    myGr.newRecord();
+    myGr.addEncodedQuery("active=true");  
+    myGr.orderBy("name");
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("number")+": "+myGr.getValue("short_description");
+        li.value=myGr.getValue("sys_id");
+        myProgramList.push(li);
+    }
+    
+    // Project Manager List
+    myProjectMgrList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    li.userid="";
+    li.lname="";
+    li.fname="";
+    myProjectMgrList.push(li);  
+    myGr = new GlideRecord("sys_user");
+    myGr.newRecord();
+    myGr.addEncodedQuery("roles=it_project_manager^active=true");  
+    myGr.orderBy("name");
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("name");
+        li.value=myGr.getValue("sys_id");
+        li.usserid=myGr.getValue("user_name");
+        li.lname=myGr.getValue("last_name");
+        li.fname=myGr.getValue("first_name");
+        myProjectMgrList.push(li);
+    }   
+    
+    //  Assigned To List
+    myAssignedToList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    li.userid="";
+    li.lname="";
+    li.fname="";
+    myAssignedToList.push(li);  
+    myGr = new GlideRecord("sys_user");
+    myGr.newRecord();
+    myGr.addEncodedQuery("roles=itil^roles=task_editor^active=true");  
+    myGr.orderBy("name");
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("name");
+        li.value=myGr.getValue("sys_id");
+        li.value=myGr.getValue("user_name");
+        li.lname=myGr.getValue("last_name");
+        li.fname=myGr.getValue("first_name");
+        myAssignedToList.push(li);
+    }
+    
+    // Phase List
+    myPhaseList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    myPhaseList.push(li);   
+    myGr = new GlideRecord("sys_choice");
+    myGr.newRecord();
+    myGr.addEncodedQuery("name=pm_project^element=phase");  
+    myGr.orderBy("label");
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("label");
+        li.value=myGr.getValue("value");
+        myPhaseList.push(li);
+    }   
+    
+    // Phase Type List
+    myPhaseTypeList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    myPhaseTypeList.push(li);   
+    myGr = new GlideRecord("sys_choice");
+    myGr.newRecord();
+    myGr.addEncodedQuery("name=planned_task^element=phase_type");  
+    myGr.orderBy("label");
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("label");
+        li.value=myGr.getValue("value");
+        myPhaseTypeList.push(li);
+    }
+    
+    // Calculation Type List
+    myCalculationTypeList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    myCalculationTypeList.push(li); 
+    myGr = new GlideRecord("sys_choice");
+    myGr.newRecord();
+    myGr.addEncodedQuery("name=planned_task^element=calculation_type");  
+    myGr.orderBy("label");
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("label");
+        li.value=myGr.getValue("value");
+        myCalculationTypeList.push(li);
+    }
+    
+    // Schedule List
+    myScheduleList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    myScheduleList.push(li);    
+    myGr = new GlideRecord("cmn_schedule");
+    myGr.newRecord();
+    myGr.orderBy("name");
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("name");
+        li.value=myGr.getValue("sys_id");
+        myScheduleList.push(li);
+    }   
+    
+    // State List
+    myStateList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    myStateList.push(li);   
+    myGr = new GlideRecord("sys_choice");
+    myGr.newRecord();
+    myGr.addEncodedQuery("name=task^element=state");  
+    myGr.orderBy("value");
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("label");
+        li.value=myGr.getValue("value");
+        myStateList.push(li);
+    }
+    
+    // Priority List
+    myPriorityList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    myPriorityList.push(li);
+    myGr = new GlideRecord("sys_choice");
+    myGr.newRecord();
+    myGr.addEncodedQuery("name=task^element=priority");  
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("label");
+        li.value=myGr.getValue("value");
+        myPriorityList.push(li);
+    }
+    
+    // Risk List
+    myRiskList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    myRiskList.push(li);
+    myGr = new GlideRecord("sys_choice");
+    myGr.newRecord();
+    myGr.addEncodedQuery("name=pm_project^element=risk");  
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("label");
+        li.value=myGr.getValue("value");
+        myRiskList.push(li);
+    }
+    
+    // Constraint List
+    myConstraintList=[];
+    li={};
+    li.label="-- None --";
+    li.value="none";
+    myConstraintList.push(li);  
+    li={};
+    li.label="ASAP";
+    li.value="asap";
+    myConstraintList.push(li);  
+    li={};
+    li.label="Start on";
+    li.value="start_on";
+    myConstraintList.push(li);
+    
+    //CMDB List
+    myCmdbCiList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    myCmdbCiList.push(li);
+    myGr = new GlideRecord("cmdb_ci");
+    myGr.newRecord();
+    myGr.orderBy("name");  
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("name");
+        li.value=myGr.getValue("sys_id");
+        myCmdbCiList.push(li);
+    }   
+    
+    //pmtask impact list
+    myPmtImpactList=[];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    myPmtImpactList.push(li);
+    myGr = new GlideRecord("sys_choice");
+    myGr.newRecord();
+    myGr.addEncodedQuery("name=task^element=impact");  
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("label");
+        li.value=myGr.getValue("value");
+        myPmtImpactList.push(li);
+    }
+    
+    //pmtask task type list
+    myPmtTaskTypeList=[];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    myPmtTaskTypeList.push(li); 
+    myGr = new GlideRecord("sys_choice");
+    myGr.newRecord();
+    myGr.addEncodedQuery("name=pm_project_task^element=u_task_type");  
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("label");
+        li.value=myGr.getValue("value");
+        myPmtTaskTypeList.push(li);
+    }   
+     
+    //pmtask assignment group list
+    var myGr2,myQuery2;
+    var myGr3,myQuery3;
+    var myGroupSysId, myUserSysId;  
+    var user;
+    myPmtAssignmentGroupList=[];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    li.memberlist = [];
+    myPmtAssignmentGroupList.push(li);  
+    myGr = new GlideRecord("sys_user_group");
+    myGr.newRecord();
+    myGr.addEncodedQuery("active=true");  
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("name");
+        li.value=myGr.getValue("sys_id");
+        li.memberlist = [];
+        myGroupSysId=li.value;
+        myQuery2="group="+myGroupSysId;
+        myGr2 = new GlideRecord("sys_user_grmember");
+        myGr2.initialize();
+        myGr2.addEncodedQuery(myQuery2);
+        myGr2.query();
+        while (myGr2.next())
+        {
+            myUserSysId = myGr2.user;
+            myQuery3 = "sys_id="+myUserSysId;
+            myGr3 = new GlideRecord("sys_user");
+            myGr3.addEncodedQuery(myQuery3);
+            myGr3.query();
+            if (myGr3.next())
+            {
+                u = {};
+                u.label=myGr3.getValue("name");
+                u.value=myGr3.getValue("sys_id");
+                u.userid=myGr3.getValue("user_name");
+                u.lname=myGr3.getValue("last_name");
+                u.fname=myGr3.getValue("first_name");
+                li.memberlist.push(u);
+            }
+        }       
+        myPmtAssignmentGroupList.push(li);
+    }   
+        
+    //pmtask  Assigned To List
+    myPmtAssignedToList = [];
+    li = {};
+    li.label="-- None --";
+    li.value="none";
+    li.lname="";
+    li.fname="";
+    myPmtAssignedToList.push(li);   
+    myGr = new GlideRecord("sys_user");
+    myGr.newRecord();
+    myGr.addEncodedQuery("roles=itil");  
+    myGr.orderBy("name");
+    myGr.query();
+    while (myGr.next())
+    {
+        li={};
+        li.label=myGr.getValue("name");
+        li.value=myGr.getValue("sys_id");
+        li.userid=myGr.getValue("user_name");
+        li.lname=myGr.getValue("last_name");
+        li.fname=myGr.getValue("first_name");
+        myPmtAssignedToList.push(li);
+    }
+    
+    //
+    myResult = {};
+    myResult.portfolio=myPortfolioList;
+    myResult.program=myProgramList;
+    myResult.projmgr=myProjectMgrList;
+    myResult.assignedto=myAssignedToList;
+    myResult.phase=myPhaseList;
+    myResult.phasetype=myPhaseTypeList;
+    myResult.calculationtype=myCalculationTypeList;
+    myResult.schedule=myScheduleList;
+    myResult.state=myStateList;
+    myResult.priority=myPriorityList;
+    myResult.risk=myRiskList;
+    myResult.constraint=myConstraintList;   
+    myResult.cmdbci=myCmdbCiList;
+    myResult.pmtimpact=myPmtImpactList;
+    myResult.pmttasktype=myPmtTaskTypeList;
+    myResult.pmtassignmentgroup=myPmtAssignmentGroupList;
+    myResult.pmtassignedto=myPmtAssignedToList;
+    
+    return myResult;
+    
+})(request, response);
+]]></operation_script>
+        <operation_uri>/api/x_126085_umppmgr/uweb/lulist/{id}</operation_uri>
+        <produces>application/json,application/xml,text/xml</produces>
+        <produces_customized>false</produces_customized>
+        <relative_path>/lulist/{id}</relative_path>
+        <request_example/>
+        <requires_acl_authorization>false</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <short_description>Get look-up lists...</short_description>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2018-03-07 22:36:30</sys_created_on>
+        <sys_id>0f8eeb8cdbb45300b67cf20ebf961923</sys_id>
+        <sys_mod_count>6</sys_mod_count>
+        <sys_name>uLuLists</sys_name>
+        <sys_package display_value="uMppMgr" source="x_126085_umppmgr">d93cab88db745300b67cf20ebf9619d2</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="uMppMgr">d93cab88db745300b67cf20ebf9619d2</sys_scope>
+        <sys_update_name>sys_ws_operation_0f8eeb8cdbb45300b67cf20ebf961923</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2018-04-09 19:52:42</sys_updated_on>
+        <web_service_definition display_value="uWeb">a08ca78cdbb45300b67cf20ebf96195c</web_service_definition>
+        <web_service_version/>
+    </sys_ws_operation>
+</record_update>

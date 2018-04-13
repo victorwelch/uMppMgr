@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json,application/xml,text/xml</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri/>
+        <enforce_acl/>
+        <http_method>GET</http_method>
+        <name>uDownLoad</name>
+        <operation_script><![CDATA[function uChildTasks(argParentId,argLevel)
+{
+	var myRtnList = [];
+	var myGr, myTask, mySysId, myEmptyField;
+	var myQuerySysId;
+	var tpList = ['tasknum',
+				  'taskname',
+				  'taskassignmentgroup',
+				  'taskassignedto',
+				  'taskstate',
+				  'taskpriority',
+				  'taskimpact',
+				  'tasktype',
+				  'taskconstraint',
+				  'taskkeymilestone',
+				  'taskmilestone',
+				  'taskplannedstartdate',
+				  'taskplannedenddate',
+				  'taskactualstartdate',
+				  'taskactualenddate',
+				  'isrollup'];
+	var tpLen = tpList.length;
+	var tp;
+	var fldList = {tasknum:'number',
+				   taskname:'short_description',
+				   taskassignmentgroup:'assignment_group',
+				   taskassignedto:'assigned_to',
+				   taskstate:'state',
+				   taskpriority:'priority',
+				   taskimpact:'impact',
+				   tasktype:'u_task_type',
+				   taskconstraint:'time_constraint',
+				   taskkeymilestone:'key_milestone',
+				   taskmilestone:'milestone',
+				   taskplannedstartdate:'start_date',
+				   taskplannedenddate:'end_date',
+				   taskactualstartdate:'work_start',
+				   taskactualenddate:'work_end',
+				   isrollup:'rollup'};
+		
+	myGr = new GlideRecord("pm_project_task");
+	myGr.initialize();
+
+	myQuerySysId = 'parent=' + argParentId;
+	myGr.addEncodedQuery(myQuerySysId);
+	myGr.orderBy('number');
+	myGr.query();
+
+	while (myGr.next())
+	{
+		myTask = {};
+		argLevel=argLevel+1;
+		myTask.level = argLevel.toString();
+		myTask.childlist=[];
+		for (var i=0;i<tpLen;i++)
+		{
+			myTask[tpList[i]]={};
+			myTask[tpList[i]]={ value:'', label:'', datastatus:'empty' };
+		}
+		mySysId=myGr.getValue('sys_id');
+		myTask.childlist=uChildTasks(mySysId,argLevel);
+		for (var j=0;j<tpLen;j++)
+		{
+			tp = tpList[j];
+			switch(tp)
+			{
+				case 'tasknum':
+					myTask['tasknum'].label = myGr.getDisplayValue(fldList.tasknum);
+					myTask['tasknum'].value = mySysId;
+					myTask['tasknum'].datastatus = 'snow';
+					break;
+				default:
+					if ( myGr.getValue(fldList[tp]) )  // Is not emtpy?
+					{
+						myTask[tp].label = myGr.getDisplayValue(fldList[tp]);
+						myTask[tp].value = myGr.getValue(fldList[tp]);
+						myTask[tp].datastatus = 'snow';
+					}
+					break;
+			}
+		}
+		myRtnList.push(myTask);
+	}
+	return myRtnList;
+}
+(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+	// implement resource here
+	//var myInfo = '';
+	var myGr, myProj, myQuerySysId, myEmptyField;
+	var myRtnList=[];
+	var ppList = ['projectnum',
+				  'projectname',
+				  'portfolio',
+				  'program',
+				  'cmdbci',
+				  'projectmgr',
+				  'assignedto',
+				  'phase',
+				  'phasetype',
+				  'calculationtype',
+				  'schedule',
+				  'state',
+				  'priority',
+				  'risk',
+				  'strategicpriority',
+				  'hotitem',
+				  'needsfollowup',
+				  'plannedstartdate',
+				  'plannedenddate',
+				  'actualstartdate',
+				  'actualenddate',
+				  'isrollup'];
+	var ppLen = ppList.length;
+	var pp;
+	var fldList = {projectnum:'number',
+				   projectname:'short_description',
+				   portfolio:'primary_portfolio',
+				   program:'primary_program',
+				   cmdbci:'cmdb_ci',
+				   projectmgr:'project_manager',
+				   assignedto:'assigned_to',
+				   phase:'phase',
+				   phasetype:'phase_type',
+				   calculationtype: 'calculation_type',
+				   schedule:'schedule',
+				   state:'state',
+				   priority:'priority',
+				   risk:'risk',
+				   strategicpriority:'u_strategic_priority',
+				   hotitem:'u_hot_item',
+				   needsfollowup:'u_needs_follow_up',
+				   plannedstartdate:'start_date',
+				   plannedenddate:'end_date',
+				   actualstartdate:'work_start',
+				   actualenddate:'work_end',
+				   isrollup:'rollup'};
+
+	// **************************************
+	var mySysId = request.pathParams.id; // *
+	// **************************************
+
+	myProj = {};
+	myProj.level = '0';
+	myProj.childlist=[];
+	for (var i=0;i<ppLen;i++)
+	{
+		myProj[ppList[i]]={};
+		myProj[ppList[i]]={ value: '', label: '', datastatus: 'empty' };
+	}
+	myProj.childlist=uChildTasks(mySysId,0);
+
+	myGr = new GlideRecord("pm_project");
+	myGr.initialize();
+
+	myQuerySysId = 'sys_id=' + mySysId;
+	myGr.addEncodedQuery(myQuerySysId);
+	myGr.query();
+	if (myGr.next()){
+		for (var j=0;j<ppLen;j++)
+		{
+			pp = ppList[j];
+			if ( myGr.getValue(fldList[pp]) )  // Is not emtpy?
+			{
+				myProj[pp].label = myGr.getDisplayValue(fldList[pp]);
+				myProj[pp].value = myGr.getValue(fldList[pp]);
+				//myInfo += ppList[j]+':' + fldList[ppList[j]]+ '->' + myGr.getDisplayValue(fldList[ppList[j]]) + ':' + myGr.getValue(fldList[ppList[j]]) + ',';
+				myProj[pp].datastatus = 'snow';
+			}				
+			//gs.info(myInfo);
+		}
+		myRtnList.push(myProj);
+	}
+	return myRtnList;
+})(request, response);]]></operation_script>
+        <operation_uri>/api/x_126085_umppmgr/uweb/read/{id}</operation_uri>
+        <produces>application/json,application/xml,text/xml</produces>
+        <produces_customized>false</produces_customized>
+        <relative_path>/read/{id}</relative_path>
+        <request_example/>
+        <requires_acl_authorization>false</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <short_description/>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2018-03-08 20:41:00</sys_created_on>
+        <sys_id>82fdd0a0dbfc5300b67cf20ebf961944</sys_id>
+        <sys_mod_count>16</sys_mod_count>
+        <sys_name>uDownLoad</sys_name>
+        <sys_package display_value="uMppMgr" source="x_126085_umppmgr">d93cab88db745300b67cf20ebf9619d2</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="uMppMgr">d93cab88db745300b67cf20ebf9619d2</sys_scope>
+        <sys_update_name>sys_ws_operation_82fdd0a0dbfc5300b67cf20ebf961944</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2018-04-10 23:13:18</sys_updated_on>
+        <web_service_definition display_value="uWeb">a08ca78cdbb45300b67cf20ebf96195c</web_service_definition>
+        <web_service_version/>
+    </sys_ws_operation>
+</record_update>
